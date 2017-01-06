@@ -1,0 +1,11 @@
+name = Materiaal
+description = Een module die het mogelijk maakt om materiaal te reserveren bij Wina.
+core = 7.x
+package = Wina
+
+
+dependencies[] = formtable
+dependencies[] = ldb
+dependencies[] = multipart_mail_system
+dependencies[] = kassa
+dependencies[] = ldb_app

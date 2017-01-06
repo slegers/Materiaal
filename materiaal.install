@@ -1,0 +1,136 @@
+<?php
+function materiaal_schema(){
+	$schema = array();
+
+	$schema['materiaal_ding'] = array(
+	'description'=> 'een tabel die alle verhuurbare materialen van Wina bevat',
+	'fields'=> array(
+		'ding_id'=> array(
+			'type'=> 'int',
+			'not null'=> true,
+			),
+		'naam'=> array(
+			'type'=> 'varchar',
+			'length'=> 100,
+			'not null'=> true,
+			),	
+		'verhuurbaar_aan'=> array(
+			'type'=> 'varchar',
+			'length'=> 1,
+			'not null'=> true,
+			),
+		'prijs_leden'=> array(
+			'type'=> 'int',
+			'not null'=> true,
+			),
+		'prijs_niet_leden'=> array(
+			'type'=> 'int',
+			'not null'=>true,
+			),
+		'waarborg'=> array(
+			'type'=> 'int',
+			'not null'=> true,
+			),
+		),
+	'primary key'=> array('ding_id'),
+	);
+
+	$schema['materiaal_aanvraag_reservatie'] = array(
+	'description'=> 'Een tabel die aanvragen tot reservatie bevat.',
+	'fields'=> array(
+		'reservatie_id'=> array(
+			'type'=> 'int',
+			'not null'=> true,
+		),
+		'reden'=> array(
+			'type'=> 'varchar',
+			'length'=> 1000,
+			'not null'=> false,
+		),
+		'tijdstip_aanvraag'=> array(
+			'type'=> 'int',	
+			'not null' => true,
+		),
+		'persoon_id' => array(
+			'type' => 'int',
+			'not null' => true,
+		),
+		'tijdstip_afhalen'=> array(
+			'type' => 'int',
+			'not null'=> true,
+		),
+		'tijdstip_teruggave'=> array(
+			'type'=> 'int',
+			'not null' => true,
+		),
+		'presidium_activiteit'=> array(
+			'type'=> 'varchar',
+			'length'=> 1,
+			'not null' => false,
+		),
+		'is_lid' => array(
+			'type' => 'varchar',
+			'length'=> 1,
+			'not null' => true,
+		),
+	),
+		'primary key'=> array('reservatie_id')
+	);
+	$schema['materiaal_reservatie_bevat_ding'] = array(
+	'description' => 'Een tabel die alle dingen bevat die een reservatie bevat',
+	'fields' => array(
+		'reservatie_id' => array(
+			'type' => 'int',
+			'not null' => true,
+			),
+		'ding_id' => array(
+			'type' => 'int',
+			'not null' => true,
+			),
+		),
+	'primary key' => array('reservatie_id','ding_id'),
+	);
+	$schema['materiaal_reservatie'] = array(
+	'description' => 'Een tabel die alle goedgekeurde reservaties bevat',
+	'fields' => array(
+		'reservatie_id' => array(
+			'type'=> 'int',
+			'not null' => true,
+			),
+	),
+	'primary key' => array('reservatie_id'),
+	);
+	$schema['materiaal_status'] = array(
+	'description' => 'Een tabel die alle dingen bevat die zijn afgehaald',
+	'fields' => array(
+		'reservatie_id' => array(
+			'type' => 'int',
+			'not null' => true,
+			),
+		'afgehaald' => array(
+			'type' => 'varchar',
+			'not null' => false,
+			'length' => 1,
+			),
+		'teruggebracht' => array(
+			'type' => 'varchar',
+			'not null' => false,
+			'length' => 1,
+			),
+	 ),
+	'primary key' => array('reservatie_id'),
+	);
+	return $schema;
+}
+
+function materiaal_enable() {
+  $mail_system = variable_get('mail_system', array('default-system' => 'DefaultMailSystem'));
+  $mail_system['materiaal'] = 'MultipartMailSystem';
+  variable_set('mail_system', $mail_system);
+}
+
+function materiaal_disable() {
+  $mail_system = variable_get('mail_system', array('default-system' => 'DefaultMailSystem'));
+  unset($mail_system['materiaal']);
+  variable_set('mail_system', $mail_system);
+}

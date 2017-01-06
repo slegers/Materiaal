@@ -1,0 +1,12 @@
+div.he {
+    background-color: #81F7F3;
+    width:auto;
+    border: 2px solid blue;
+    padding: 25px;
+    margin: 25px;
+    text-align: center;
+    font-size: 250%;
+}
+div.row {
+    padding: 28px;
+}

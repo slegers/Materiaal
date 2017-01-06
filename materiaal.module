@@ -1,0 +1,256 @@
+<?php
+/**
+*	A module that handles material reservations, payment,...
+*
+*	@author Yanice Slegers 2015 - 2016
+*	@version 1.0
+*/
+function materiaal_menu(){
+	$items = array();
+
+	$items['materiaal'] = array(
+	'title' => t('Material Overview'),
+	'page callback' => 'drupal_get_form',
+	'page arguments' => array('materiaal_overview_form'),
+	'access callback' => true,
+	'access arguments' => array('materiaal'),
+	'file' => 'pages/reservatie.overview.inc',
+	);
+
+
+	$items['materiaal/my'] = array(
+	'type' => MENU_DEFAULT_LOCAL_TASK,
+	'title' => t('Reservations'),
+	'weight' => -1,
+	);
+	global $user;
+
+
+	$items['materiaal/overview'] = array(
+	'type' => MENU_LOCAL_TASK,
+	'title' => t('My Reservations'),
+	'weight' => 0,
+	'access arguments'=> array('materiaal'),
+	'page arguments' => array('materiaal_overview_form',$user),
+	);
+
+	$items['materiaal/reservation'] = array(
+	'title' => t('Place reservation'),  
+      	'page callback' => 'drupal_get_form',
+	'page arguments'=> array('materiaal_form'),
+	'access callback' => true,
+	'file'=> 'pages/reservatie.inc',
+	'type'=> MENU_LOCAL_ACTION, 
+	);
+	$items['materiaal/add_ding'] = array(
+	'title'=> t('Add ding'),
+	'page callback'=> 'drupal_get_form',
+	'page arguments'=> array('materiaal_add_ding_form'),
+	'access arguments'=> array('materiaal'),
+	'file'=> 'pages/ding.add.inc',
+	'type' => MENU_LOCAL_ACTION,
+	);
+	$items['materiaal/edit/%materiaal_ding'] = array(
+	'title'=> 'Edit ding',
+	'page callback'=> 'drupal_get_form',
+	'page arguments'=> array('materiaal_add_ding_form',2),
+	'access arguments'=> array('materiaal'),
+	'file'=> 'pages/ding.add.inc',
+	);
+	$items['materiaal/validate_reservatie'] = array(
+	'title' => 'Validate Reservation',
+	'page callback' => 'drupal_get_form',
+	'page arguments' => array('materiaal_reservatie_validate'),
+	'access arguments' => array('materiaal'),
+	'file' => 'pages/reservatie.validate.inc',
+	'type' => MENU_LOCAL_ACTION,
+	);
+	$items['materiaal/validate_reservatie/%materiaal_reservatie'] = array(
+	'title' => 'Edit Reservation',
+	'page callback' => 'drupal_get_form',
+	'page arguments' => array('materiaal_form',2),
+	'access arguments' => array('materiaal'),
+	'file' => 'pages/reservatie.inc',
+	);	
+
+	$items['admin/config/content/materiaal'] = array(
+	'title' => 'materiaal',
+	'description' => t('Configure the materiaal settings'),
+	'page callback' => 'drupal_get_form',
+	'page arguments'=> array('materiaal_admin'),
+	'access arguments' => array('access administration pages'),	
+	'file'=> 'admin/admin.general.inc',
+	);
+	$items['admin/config/content/materiaal/mail'] = array(
+	'type' => MENU_DEFAULT_LOCAL_TASK,
+	'title' => t('General'),  
+	'weight' => -1, 
+	);
+	$items['admin/config/content/materiaal/settings'] = array(
+	'type' => MENU_LOCAL_TASK,
+	'title' => t('Mail setings'),
+	'weight'=> 0,
+	'access callback' =>true,
+	'page arguments' => array('materiaal_settings_form'),
+	'file' => 'admin/admin.mail.inc',
+	);
+	$items['materiaal/kalender'] = array(
+	'title' => 'kalender',
+	'page callback' => 'drupal_get_form',
+	'page arguments'=> array('materiaal_kalender'),
+	'access arguments' => array('access administration pages'),
+	'file' => 'pages/calendar.overview.inc',
+	);	
+	return $items;
+}
+function materiaal_theme($existing, $type, $theme, $path){ 
+	module_load_include('inc', 'materiaal', 'materiaal.theme');
+	return _materiaal_theme($existing, $type, $theme, $path);
+}
+function materiaal_reservatie_load($reservatie_id){
+	$d = db_select('materiaal_aanvraag_reservatie')
+	->fields('materiaal_aanvraag_reservatie')
+	->condition('reservatie_id',$reservatie_id)
+	->execute()
+	->fetchObject();
+	
+	if(!$d){
+		return false;
+	}else{
+		return $d;
+	}
+}
+
+function materiaal_aanvraag_reservatie(){
+	$d = db_select('materiaal_aanvraag_reservatie');
+	$d->fields('materiaal_aanvraag_reservatie');
+	return $d->execute()->fetchAll();
+}
+function materiaal_behoort_tot_reservatie($ding_id,$reservatie_id){
+
+	if($reservatie_id==''){	
+		return false;
+
+	}
+
+	$d = db_select('materiaal_reservatie_bevat_ding');
+	$d->condition('ding_id',$ding_id)
+	->condition('reservatie_id',$reservatie_id)
+	->fields('materiaal_reservatie_bevat_ding');
+	
+	
+
+	if($d->CountQuery()->execute()->fetchField() > 0){
+		return true;
+	} 
+		return false;
+}
+function materiaal_ding_load($ding_id){
+	$ding = db_select('materiaal_ding')
+	->fields('materiaal_ding')
+	->condition('ding_id',$ding_id,'=')
+	->execute()
+	->fetchObject();
+
+	if(!$ding){
+	  return false;
+	}else{
+	  return $ding;
+	}
+}
+function materiaal_permission(){
+	return array(
+	'materiaal'=> array(
+		'title'=> t('Edit materiaal'),
+		'description'=> t('De mogenlijkheid om materiaal toe te voegen'),
+		),
+	'webteam'=> array(
+		'title'=> t('Edit materiaal 2.0'),
+		'description'=> t('Doe extreem gevaarlijke dingen met het materiaal'),
+		),
+	);
+}
+
+function materiaal_get_max($tablename,$kolumnname){
+	$query = db_select($tablename);
+	$query->addExpression('MAX('.$kolumnname.')');
+	return $query->execute()->fetchField();
+}
+
+function materiaal_price_to_euro($prijs){
+	if($prijs == null or $prijs == 0){
+		return '€ 0';
+	}elseif(strlen($prijs)==2){
+		return '€ ' . '0,'.$prijs;
+	}elseif(strlen($prijs)==1){
+       		 return '€ ' . '0,0'.$prijs;
+        }
+	$d = substr($prijs,0,-2);
+	$k = substr($prijs,-2);
+	return '€ ' . $d .',' . $k;
+}
+function materiaal_is_lid($persoon_id){
+	$q = ldb_select('persoon_lidmaatschap');
+	$q->condition('persoon_id',$persoon_id)
+	->condition('jaar',ldb_get_jaar('boekjaar'))
+	->fields('persoon_lidmaatschap');
+	if(count($q->execute()->fetch())>=1){
+		return true;
+	}
+		return false;
+}
+function materiaal_get_persoon($persoon_id){
+	$q = ldb_select('persoon');
+	$q->condition('persoon_id',$persoon_id)
+	->fields('persoon');
+	return $q->execute()->fetch();
+}
+
+function materiaal_mail($key,&$message,$params){
+		module_load_include('inc','materiaal','/pages/reservatie.mail.inc');
+		_materiaal_mail($key,$message,$params);	
+}
+
+function materiaal_get_gereserveerd_materiaal($reservatie_id){
+	$w = db_select('materiaal_reservatie_bevat_ding','mr');
+		$w->join('materiaal_ding','md','md.ding_id = mr.ding_id');
+		$w->condition('reservatie_id',$reservatie_id)
+		->fields('mr')
+		->fields('md');
+	return $w->execute()->fetchAll();
+}
+
+function materiaal_is_goedgekeurd($reservatie_id){
+	$q = db_select('materiaal_reservatie')
+	->condition('reservatie_id',$reservatie_id)
+	->range(0,1)
+	->fields('materiaal_reservatie')
+	->execute()
+	->rowCount();
+	if($q){
+		return true;
+	}
+	return false;
+}
+
+function materiaal_get_waarborg($reservatie_id){
+	$waarborg = 0;
+	foreach(materiaal_get_gereserveerd_materiaal($reservatie_id) as $reservatie){
+			$waarborg+= $reservatie->waarborg;
+	}
+	return $waarborg;
+}
+
+function materiaal_get_prijs($reservatie_id,$persoon_id){
+	$waarborg = 0;
+	foreach(materiaal_get_gereserveerd_materiaal($reservatie_id) as $reservatie){
+
+	  if(materiaal_is_lid($persoon_id)){
+                        $waarborg+= $reservatie->prijs_leden;
+                }else{
+                        $waarborg+= $reservatie->prijs_niet_leden;
+                }
+        }
+	$waarborg += materiaal_get_waarborg($reservatie_id);
+	return $waarborg;
+}
